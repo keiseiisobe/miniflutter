@@ -68,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
           SizedBox(height: 20),
-          ComparisonWidget(
+          _ComparisonWidget(
             title: 'Text',
             flutterWidget: Text(_string1),
             miniflutterWidget: miniflutter.Text(_string1),
@@ -79,9 +79,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class ComparisonWidget extends StatelessWidget {
-  const ComparisonWidget({
-    super.key,
+class _ComparisonWidget extends StatelessWidget {
+  const _ComparisonWidget({
     required this.title,
     required this.flutterWidget,
     required this.miniflutterWidget,
