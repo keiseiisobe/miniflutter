@@ -1,9 +1,10 @@
-import 'package:flutter/widgets.dart';
+import 'package:miniflutter/widgets.dart' as miniflutter;
+import 'package:flutter/material.dart';
 
 /// Text Widget is just a wrapper of RichText which is a RenderObjectWidget.
 /// see the link below for details.
 /// https://docs.flutter.dev/resources/architectural-overview#rendering-and-layout:~:text=Correspondingly%2C%20the%20Image%20and%20Text%20widgets%20might%20insert%20child%20widgets%20such%20as%20RawImage%20and%20RichText%20during%20the%20build%20process.%20The%20eventual%20widget%20hierarchy%20might%20therefore%20be%20deeper%20than%20what%20the%20code%20represents%2C%20as%20in%20this%20case2%3A
-class Text extends StatelessWidget {
+class Text extends miniflutter.StatelessWidget {
   const Text(
     this.data, {
     super.key,
@@ -28,7 +29,7 @@ class Text extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultTextStyle = DefaultTextStyle.of(context);
+    final defaultTextStyle = miniflutter.DefaultTextStyle.of(context);
 
     return RichText(
       text: TextSpan(text: data, style: style ?? defaultTextStyle.style),
