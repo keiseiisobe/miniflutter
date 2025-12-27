@@ -45,6 +45,43 @@ abstract class StatefulWidget extends Widget {
   State createState();
 }
 
+abstract class State<T extends StatefulWidget> {
+  /// These properties ([_widget] and [_element]) are initialized by the framework before calling [initState].
+  T? _widget;
+  StatefulElement? _element;
+
+  T get widget => _widget!;
+
+  BuildContext get context {
+    if (_element == null) {
+      throw FlutterError("context is null");
+    }
+    return _element!;
+  }
+
+  bool get mounted => _element != null;
+
+  @protected
+  void initState();
+
+  @protected
+  void didUpdateWidget(covariant T oldWidget);
+
+  @protected
+  void dispose();
+
+  /// Thie method is expected to be called at most once per frame,
+  @protected
+  void setState(VoidCallback fn) {
+    fn();
+    // TODO(someone): fn must not be async
+    _element!.markNeedsBuild();
+  }
+
+  @protected
+  Widget build(BuildContext context);
+}
+
 class StatefulElement extends ComponentElement {
   StatefulElement(StatefulWidget super.widget) : state = widget.createState();
 
