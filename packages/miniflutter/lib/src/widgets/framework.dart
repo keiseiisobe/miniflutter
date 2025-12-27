@@ -92,3 +92,15 @@ class StatefulElement extends ComponentElement {
     return state.build(this);
   }
 }
+
+abstract class ComponentElement extends Element {
+  ComponentElement(super.widget);
+
+  final bool _debugDoingBuild = false;
+
+  @override
+  bool get debugDoingBuild => _debugDoingBuild;
+
+  @protected
+  Widget build();
+}
