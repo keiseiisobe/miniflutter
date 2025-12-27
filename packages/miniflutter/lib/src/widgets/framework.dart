@@ -16,6 +16,10 @@ abstract class StatelessWidget extends Widget {
   Widget build(BuildContext context);
 }
 
+/// The element tree is necessary because the widgets themselves are immutable,
+/// which means (among other things), they cannot remember their parent or
+/// child relationships with other widgets.
+/// https://docs.flutter.dev/resources/inside-flutter#:~:text=The%20element%20tree%20is%20necessary%20because%20the%20widgets%20themselves%20are%20immutable%2C%20which%20means%20(among%20other%20things)%2C%20they%20cannot%20remember%20their%20parent%20or%20child%20relationships%20with%20other%20widgets.
 class StatelessElement extends ComponentElement {
   StatelessElement(StatelessWidget super.widget);
 
@@ -25,5 +29,29 @@ class StatelessElement extends ComponentElement {
   @override
   Widget build() {
     return (widget as StatelessWidget).build(this);
+  }
+}
+
+abstract class StatefulWidget extends Widget {
+  const StatefulWidget({super.key});
+
+  @override
+  StatefulElement createElement() {
+    return StatefulElement(this);
+  }
+
+  @protected
+  @factory
+  State createState();
+}
+
+class StatefulElement extends ComponentElement {
+  StatefulElement(StatefulWidget super.widget) : state = widget.createState();
+
+  final State state;
+
+  @override
+  Widget build() {
+    return state.build(this);
   }
 }

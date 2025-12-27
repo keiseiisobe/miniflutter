@@ -32,7 +32,10 @@ class Text extends miniflutter.StatelessWidget {
     final defaultTextStyle = miniflutter.DefaultTextStyle.of(context);
 
     return RichText(
-      text: TextSpan(text: data, style: style ?? defaultTextStyle.style),
+      text: TextSpan(
+        text: data,
+        style: style ?? defaultTextStyle.style.merge(style),
+      ),
       textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
       softWrap: softWrap ?? defaultTextStyle.softWrap,
       overflow: overflow ?? defaultTextStyle.overflow,
@@ -52,7 +55,7 @@ class DefaultTextStyle extends InheritedTheme {
     required super.child,
   });
 
-  DefaultTextStyle.fallback({super.key})
+  const DefaultTextStyle.fallback({super.key})
     /// Default TextStyle depends on your platform.
     /// ex.
     /// The default font-family for Android,Fuchsia and Linux is Roboto.
@@ -65,7 +68,7 @@ class DefaultTextStyle extends InheritedTheme {
       softWrap = true,
       overflow = TextOverflow.clip,
       maxLines = null,
-      super(child: _NullWidget());
+      super(child: const _NullWidget());
 
   final TextStyle style;
 
@@ -92,7 +95,7 @@ class DefaultTextStyle extends InheritedTheme {
     // to search neareset widget<T> from element tree.
     // https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html#:~:text=Calling%20this%20method%20is%20O(1)%20with%20a%20small%20constant%20factor
     return context.dependOnInheritedWidgetOfExactType<DefaultTextStyle>() ??
-        DefaultTextStyle.fallback();
+        const DefaultTextStyle.fallback();
   }
 }
 
