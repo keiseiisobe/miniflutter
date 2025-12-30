@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:miniflutter/widgets.dart' as miniflutter;
 
 void main() {
-  runApp(const MyApp());
+  miniflutter.runApp(const MyApp());
 }
 
 class MyApp extends miniflutter.StatelessWidget {

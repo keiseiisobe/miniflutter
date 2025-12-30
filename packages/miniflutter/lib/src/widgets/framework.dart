@@ -93,14 +93,14 @@ class StatefulElement extends ComponentElement {
   }
 }
 
-abstract class ComponentElement extends Element {
-  ComponentElement(super.widget);
+// abstract class ComponentElement extends Element {
+//   ComponentElement(super.widget);
 
-  final bool _debugDoingBuild = false;
+//   final bool _debugDoingBuild = false;
 
-  @override
-  bool get debugDoingBuild => _debugDoingBuild;
+//   @override
+//   bool get debugDoingBuild => _debugDoingBuild;
 
-  @protected
-  Widget build();
-}
+//   @protected
+//   Widget build();
+// }
