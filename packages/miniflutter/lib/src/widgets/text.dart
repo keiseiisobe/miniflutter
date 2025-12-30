@@ -1,5 +1,6 @@
 import 'package:miniflutter/widgets.dart' as miniflutter;
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide DefaultTextStyle;
+import 'package:flutter/widgets.dart' as flutter show DefaultTextStyle;
 
 /// Text Widget is just a wrapper of RichText which is a RenderObjectWidget.
 /// see the link below for details.
@@ -90,12 +91,13 @@ class DefaultTextStyle extends InheritedTheme {
     throw UnimplementedError();
   }
 
-  static DefaultTextStyle of(BuildContext context) {
+  static flutter.DefaultTextStyle of(BuildContext context) {
     // BuildContext.dependOnInheritedWidgetOfExactType method require only O(1) arithmetical cost
     // to search neareset widget<T> from element tree.
     // https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html#:~:text=Calling%20this%20method%20is%20O(1)%20with%20a%20small%20constant%20factor
-    return context.dependOnInheritedWidgetOfExactType<DefaultTextStyle>() ??
-        const DefaultTextStyle.fallback();
+    return context
+            .dependOnInheritedWidgetOfExactType<flutter.DefaultTextStyle>() ??
+        const flutter.DefaultTextStyle.fallback();
   }
 }
 
