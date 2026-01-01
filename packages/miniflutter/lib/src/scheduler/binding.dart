@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:miniflutter/foundation.dart' as miniflutter_foundation;
 
-mixin SchedulerBinding on BindingBase {
+mixin SchedulerBinding on miniflutter_foundation.BindingBase {
   static SchedulerBinding? _instance;
-  static SchedulerBinding get instance => BindingBase.checkInstance(_instance);
+  static SchedulerBinding get instance =>
+      miniflutter_foundation.BindingBase.checkInstance(_instance);
 
   @override
   void initInstances() {

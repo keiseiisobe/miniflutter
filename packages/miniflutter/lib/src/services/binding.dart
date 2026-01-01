@@ -1,16 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:miniflutter/foundation.dart' as miniflutter_foundation;
 import 'package:miniflutter/scheduler.dart' as miniflutter_scheduler;
 
-mixin ServicesBinding on BindingBase, miniflutter_scheduler.SchedulerBinding {
+mixin ServicesBinding
+    on
+        miniflutter_foundation.BindingBase,
+        miniflutter_scheduler.SchedulerBinding {
   static ServicesBinding? _instance;
-  static ServicesBinding get instance => BindingBase.checkInstance(_instance);
+  static ServicesBinding get instance =>
+      miniflutter_foundation.BindingBase.checkInstance(_instance);
 
   late final BinaryMessenger _defaultBinaryMessanger;
   BinaryMessenger get defaultBinaryMessanger => _defaultBinaryMessanger;
 
   @override
   void initInstances() {
+    assert(() {
+      debugPrint('ServicesBinding.initInstances()');
+      return true;
+    }());
     super.initInstances();
     _instance = this;
     _defaultBinaryMessanger = createBinaryMessanger();
