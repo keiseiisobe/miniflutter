@@ -6,9 +6,11 @@ mixin SchedulerBinding on BindingBase {
 
   @override
   void initInstances() {
+    assert(() {
+      debugPrint('SchedulerBinding.initInstances()');
+      return true;
+    }());
     super.initInstances();
-    // When you use `this` keyword inside a mixin, it behaves exactly as it does in a normal class.
-    // It represents the object that the mixin has been applied to.
     _instance = this;
   }
 

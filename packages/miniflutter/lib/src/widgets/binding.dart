@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:miniflutter/scheduler.dart' as miniflutter;
+import 'package:miniflutter/scheduler.dart' as miniflutter_scheduler;
+import 'package:miniflutter/services.dart' as miniflutter_services;
+import 'package:miniflutter/rendering.dart' as miniflutter_rendering;
 
 void runApp(Widget app) {
-  WidgetsBinding binding = WidgetsFlutterBinding.ensureInitialized();
+  final WidgetsBinding binding = WidgetsFlutterBinding.ensureInitialized();
   _runWidget(binding.wrapWithDefaultView(app), binding);
 }
 
@@ -15,7 +17,12 @@ void _runWidget(Widget app, WidgetsBinding binding) {
     ..scheduleWarmUpFrame();
 }
 
-mixin WidgetsBinding on BindingBase, miniflutter.SchedulerBinding {
+mixin WidgetsBinding
+    on
+        BindingBase,
+        miniflutter_services.ServicesBinding,
+        miniflutter_scheduler.SchedulerBinding,
+        miniflutter_rendering.RendererBinding {
   static WidgetsBinding? _instance;
   static WidgetsBinding get instance => BindingBase.checkInstance(_instance);
 
@@ -27,6 +34,10 @@ mixin WidgetsBinding on BindingBase, miniflutter.SchedulerBinding {
 
   @override
   void initInstances() {
+    assert(() {
+      debugPrint('WidgetsBinding.initInstances()');
+      return true;
+    }());
     super.initInstances();
     // When you use `this` keyword inside a mixin, it behaves exactly as it does in a normal class.
     // It represents the object that the mixin has been applied to.
@@ -67,10 +78,18 @@ mixin WidgetsBinding on BindingBase, miniflutter.SchedulerBinding {
 /// The on clause (in *Binding mixin) forces any class that uses a mixin to also be a subclass of the type in the on clause.
 /// https://dart.dev/language/mixins#use-the-on-clause-to-declare-a-superclass:~:text=The%20on%20clause%20forces%20any%20class%20that%20uses%20a%20mixin%20to%20also%20be%20a%20subclass%20of%20the%20type%20in%20the%20on%20clause.
 class WidgetsFlutterBinding extends BindingBase
-    with miniflutter.SchedulerBinding, WidgetsBinding {
+    with
+        miniflutter_scheduler.SchedulerBinding,
+        miniflutter_services.ServicesBinding,
+        miniflutter_rendering.RendererBinding,
+        WidgetsBinding {
   static WidgetsBinding ensureInitialized() {
     if (WidgetsBinding._instance == null) {
-      return WidgetsFlutterBinding();
+      assert(() {
+        debugPrint('WidgetsFlutterBinding is initialized');
+        return true;
+      }());
+      WidgetsFlutterBinding();
     }
     return WidgetsBinding.instance;
   }
