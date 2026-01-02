@@ -104,3 +104,7 @@ class StatefulElement extends ComponentElement {
 //   @protected
 //   Widget build();
 // }
+
+class BuildOwner {
+  BuildOwner();
+}

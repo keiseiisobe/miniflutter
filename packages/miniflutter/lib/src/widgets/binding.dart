@@ -5,6 +5,7 @@ import 'package:miniflutter/foundation.dart' as miniflutter_foundation;
 import 'package:miniflutter/scheduler.dart' as miniflutter_scheduler;
 import 'package:miniflutter/services.dart' as miniflutter_services;
 import 'package:miniflutter/rendering.dart' as miniflutter_rendering;
+import 'package:miniflutter/widgets.dart' as miniflutter_widgets;
 
 void runApp(Widget app) {
   final WidgetsBinding binding = WidgetsFlutterBinding.ensureInitialized();
@@ -27,8 +28,8 @@ mixin WidgetsBinding
   static WidgetsBinding get instance =>
       miniflutter_foundation.BindingBase.checkInstance(_instance);
 
-  BuildOwner? _buildOwner;
-  BuildOwner? get buildOwner => _buildOwner;
+  miniflutter_widgets.BuildOwner? _buildOwner;
+  miniflutter_widgets.BuildOwner? get buildOwner => _buildOwner;
 
   RootElement? _rootElement;
   RootElement? get rootElement => _rootElement;
@@ -43,7 +44,7 @@ mixin WidgetsBinding
     // When you use `this` keyword inside a mixin, it behaves exactly as it does in a normal class.
     // It represents the object that the mixin has been applied to.
     _instance = this;
-    _buildOwner = BuildOwner();
+    _buildOwner = miniflutter_widgets.BuildOwner();
   }
 
   Widget wrapWithDefaultView(Widget rootWidget) {
@@ -94,4 +95,22 @@ class WidgetsFlutterBinding extends miniflutter_foundation.BindingBase
     }
     return WidgetsBinding.instance;
   }
+}
+
+class RootWidget extends Widget {
+  const RootWidget({super.key, this.child});
+
+  final Widget? child;
+
+  @override
+  Element createElement() {
+    return RootElement(this);
+  }
+}
+
+class RootElement extends Element {
+  RootElement(super.widget);
+
+  @override
+  bool get debugDoingBuild => false;
 }
