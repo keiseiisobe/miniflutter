@@ -105,6 +105,10 @@ class StatefulElement extends ComponentElement {
 //   Widget build();
 // }
 
+/// Docs in this page is valuable to understand how it works.
+/// https://api.flutter.dev/flutter/widgets/Element-class.html
+class Element {}
+
 class BuildOwner {
   BuildOwner();
 }
