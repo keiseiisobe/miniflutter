@@ -143,6 +143,8 @@ namespace widgets {
         +flushPaint()
         +flushSemantics()
     }
+    class ui["dart:ui"] {
+    }
 }
 
     %% Object inheritance
@@ -191,9 +193,14 @@ namespace widgets {
     %% Binding dependency
     WidgetsBinding ..> BuildOwner
     RendererBinding ..> PipelineOwner
+    SchedulerBinding ..> ui
 
     %% Owner dependency
     BuildOwner ..> RootElement
+
+    %% Ui dependency
+    RenderView ..> ui
+
 ```
 
 ## Flow
