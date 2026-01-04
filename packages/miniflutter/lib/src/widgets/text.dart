@@ -29,19 +29,20 @@ class Text extends miniflutter.StatelessWidget {
   final int? maxLines;
 
   @override
-  Widget build(BuildContext context) {
+  miniflutter.Widget build(miniflutter.BuildContext context) {
     final defaultTextStyle = miniflutter.DefaultTextStyle.of(context);
 
-    return RichText(
-      text: TextSpan(
-        text: data,
-        style: style ?? defaultTextStyle.style.merge(style),
-      ),
-      textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
-      softWrap: softWrap ?? defaultTextStyle.softWrap,
-      overflow: overflow ?? defaultTextStyle.overflow,
-      maxLines: maxLines ?? defaultTextStyle.maxLines,
-    );
+    throw UnimplementedError();
+    // return RichText(
+    //   text: TextSpan(
+    //     text: data,
+    //     style: style ?? defaultTextStyle.style.merge(style),
+    //   ),
+    //   textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
+    //   softWrap: softWrap ?? defaultTextStyle.softWrap,
+    //   overflow: overflow ?? defaultTextStyle.overflow,
+    //   maxLines: maxLines ?? defaultTextStyle.maxLines,
+    // );
   }
 }
 
@@ -91,21 +92,23 @@ class DefaultTextStyle extends InheritedTheme {
     throw UnimplementedError();
   }
 
-  static flutter.DefaultTextStyle of(BuildContext context) {
+  static miniflutter.DefaultTextStyle of(miniflutter.BuildContext context) {
     // BuildContext.dependOnInheritedWidgetOfExactType method require only O(1) arithmetical cost
     // to search neareset widget<T> from element tree.
     // https://api.flutter.dev/flutter/widgets/BuildContext/dependOnInheritedWidgetOfExactType.html#:~:text=Calling%20this%20method%20is%20O(1)%20with%20a%20small%20constant%20factor
     return context
-            .dependOnInheritedWidgetOfExactType<flutter.DefaultTextStyle>() ??
-        const flutter.DefaultTextStyle.fallback();
+            .dependOnInheritedWidgetOfExactType<
+              miniflutter.DefaultTextStyle
+            >() ??
+        const miniflutter.DefaultTextStyle.fallback();
   }
 }
 
-class _NullWidget extends StatelessWidget {
+class _NullWidget extends miniflutter.StatelessWidget {
   const _NullWidget();
 
   @override
-  Widget build(BuildContext context) {
+  miniflutter.Widget build(miniflutter.BuildContext context) {
     throw FlutterError(
       'DefaultTextStyle.of has been called, but DefaultTextStyle widget wan\'t found in widget tree.',
     );

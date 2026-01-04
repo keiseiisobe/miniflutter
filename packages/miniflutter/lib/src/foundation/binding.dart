@@ -9,7 +9,9 @@ abstract class BindingBase {
   ui.PlatformDispatcher get platformDispatcher =>
       ui.PlatformDispatcher.instance;
 
-  void initInstances() {}
+  void initInstances() {
+    // Subclass must override this method, and initialize binding instance.
+  }
 
   @protected
   static T checkInstance<T extends BindingBase>(T? instance) {

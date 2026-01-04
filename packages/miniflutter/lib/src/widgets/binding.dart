@@ -10,7 +10,8 @@ import 'package:miniflutter/widgets.dart' as miniflutter_widgets;
 void runApp(Widget app) {
   /// Binding concept is similar to cloud computing model(Saas, Paas, Iaas).
   /// WidgetsBinding is a most user friendly interface (like Saas) for your app to communicate with Flutter Engine.
-  /// If you want to customize your own widgets framework, you can do that by using RendererBinding and lower layer bindings (ServicesBinding, SchedulerBinding).
+  /// If you want to customize your own widgets framework,
+  /// you can do that by using RendererBinding and lower layer bindings (ServicesBinding, SchedulerBinding) and create MyWidgetsBinding.
   ///
   /// low level --> high level
   /// Binding:
@@ -53,7 +54,9 @@ mixin WidgetsBinding
     // When you use `this` keyword inside a mixin, it behaves exactly as it does in a normal class.
     // It represents the object that the mixin has been applied to.
     _instance = this;
-    _buildOwner = miniflutter_widgets.BuildOwner();
+    _buildOwner = miniflutter_widgets.BuildOwner(
+      onBuildScheduled: _handleBuildScheduled,
+    );
   }
 
   Widget wrapWithDefaultView(Widget rootWidget) {
@@ -63,10 +66,6 @@ mixin WidgetsBinding
   @protected
   void scheduleAttachRootWidget(Widget rootWidget) {
     Timer.run(() => attachRootWidget(rootWidget));
-  }
-
-  void scheduleWarmUpFrame() {
-    // throw UnimplementedError();
   }
 
   void attachRootWidget(Widget widget) {
@@ -81,11 +80,51 @@ mixin WidgetsBinding
       /// But I suppose `SchedulerBinding.instance` makes it immediately obvious
       /// to a contributor that we are triggering the scheduler,
       /// rather than calling a local helper method.
-      SchedulerBinding.instance.ensureVisualUpdate();
+      miniflutter_scheduler.SchedulerBinding.instance.ensureVisualUpdate();
     }
+  }
+
+  void _handleBuildScheduled() {
+    ensureVisualUpdate();
   }
 }
 
+class RootWidget extends miniflutter_widgets.Widget {
+  const RootWidget({super.key, this.child});
+
+  final Widget? child;
+
+  @override
+  RootElement createElement() {
+    return RootElement(this);
+  }
+
+  RootElement attach(
+    miniflutter_widgets.BuildOwner owner,
+    RootElement? element,
+  ) {
+    if (element == null) {
+      element = createElement();
+      element.assignOwner(owner);
+      owner.buildScope(element);
+    } else {}
+    return element;
+  }
+}
+
+class RootElement extends miniflutter_widgets.Element
+    with miniflutter_widgets.RootElementMixin {
+  RootElement(super.widget);
+}
+
+/// Multiple Mixin:
+/// If there is more than one mixin (n > 1), then let X be the class defined by
+/// S with M1, ..., Mn−1 with name F, where F is a fresh name, and make X
+/// abstract. Then S with M1, ..., Mn defines the class yielded by the mixin
+/// application of the mixin of Mn to the class X with name N.
+/// https://dart.dev/resources/language/spec/versions/DartLangSpec-v2.10.pdf
+///
+///
 /// The on clause (in *Binding mixin) forces any class that uses a mixin to also be a subclass of the type in the on clause.
 /// https://dart.dev/language/mixins#use-the-on-clause-to-declare-a-superclass:~:text=The%20on%20clause%20forces%20any%20class%20that%20uses%20a%20mixin%20to%20also%20be%20a%20subclass%20of%20the%20type%20in%20the%20on%20clause.
 class WidgetsFlutterBinding extends miniflutter_foundation.BindingBase
@@ -104,22 +143,4 @@ class WidgetsFlutterBinding extends miniflutter_foundation.BindingBase
     }
     return WidgetsBinding.instance;
   }
-}
-
-class RootWidget extends Widget {
-  const RootWidget({super.key, this.child});
-
-  final Widget? child;
-
-  @override
-  Element createElement() {
-    return RootElement(this);
-  }
-}
-
-class RootElement extends Element {
-  RootElement(super.widget);
-
-  @override
-  bool get debugDoingBuild => false;
 }

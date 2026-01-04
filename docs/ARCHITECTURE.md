@@ -111,8 +111,8 @@ namespace widgets {
         #initInstances()
         #checkInstance()
         #drawFrame()
-        addRenderView()
-        removeRenderView()
+        +addRenderView()
+        +removeRenderView()
     }
     class WidgetsBinding {
         instance
@@ -133,6 +133,7 @@ namespace widgets {
     }
 
     class BuildOwner {
+        onBuildScheduled
         _globalKeyRegistry[]
         +buildScope(element, callback)
         +reassemble(element)

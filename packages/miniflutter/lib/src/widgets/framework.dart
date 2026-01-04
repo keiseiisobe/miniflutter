@@ -45,6 +45,15 @@ abstract class StatefulWidget extends Widget {
   State createState();
 }
 
+abstract class Widget {
+  const Widget({this.key});
+
+  final Key? key;
+
+  @protected
+  Element createElement();
+}
+
 abstract class State<T extends StatefulWidget> {
   /// These properties ([_widget] and [_element]) are initialized by the framework before calling [initState].
   T? _widget;
@@ -93,22 +102,144 @@ class StatefulElement extends ComponentElement {
   }
 }
 
-// abstract class ComponentElement extends Element {
-//   ComponentElement(super.widget);
+abstract class ComponentElement extends Element {
+  ComponentElement(super.widget);
 
-//   final bool _debugDoingBuild = false;
+  Widget? _child;
 
-//   @override
-//   bool get debugDoingBuild => _debugDoingBuild;
+  Widget? get renderObjectAttachingChild => _child;
 
-//   @protected
-//   Widget build();
-// }
+  @protected
+  Widget build();
 
-/// Docs in this page is valuable to understand how it works.
+  @override
+  void performRebuild() {
+    Widget built;
+    try {
+      built = build();
+    } finally {
+      // Only after `build()` method finished, we mark the element as clean
+      // to ignore `markNeedsBuild()` during `build()`
+      super.performRebuild();
+    }
+    _child = updateChild(_child, built, slot);
+  }
+}
+
+/// Docs in this page is valuable to understand how Element works.
 /// https://api.flutter.dev/flutter/widgets/Element-class.html
-class Element {}
+abstract class Element implements BuildContext {
+  Element(Widget widget) : _widget = widget;
+
+  // `_widget` can be null if unmounted from tree by `unmount()`
+  Widget? _widget;
+
+  BuildOwner? _owner;
+
+  bool _dirty = true;
+
+  BuildScope? _parentBuildScope;
+
+  @override
+  Widget get widget => _widget!;
+
+  @override
+  bool get mounted => _widget != null;
+
+  @override
+  BuildOwner? get owner => _owner;
+
+  @override
+  bool get dirty => _dirty;
+
+  @override
+  BuildScope get buildScope => _parentBuildScope!;
+
+  // For now, we don't implement this method to avoid complexity.
+  @override
+  T? dependOnInheritedWidgetOfExactType<T extends InheritedWidget>() {
+    return null;
+  }
+
+  void mount(Element? parent, Object? newSlot) {
+    if (parent != null) {
+      // When parent == null (When this element is RootElement),
+      // `_owner` and `_parentBuildScope` must be initialized by `RootElementMixin.assingOwner()`
+      _owner = parent.owner;
+      _parentBuildScope = parent.buildScope;
+    }
+  }
+
+  void markNeedsBuild() {
+    _dirty = true;
+    owner!.scheduleBuildFor(this);
+  }
+
+  void rebuild() {
+    performRebuild();
+  }
+
+  void performRebuild() {
+    // Subclass must call `super.performRebuild()`.
+    _dirty = false;
+  }
+}
+
+mixin RootElementMixin on Element {
+  void assignOwner(BuildOwner owner) {
+    _owner = owner;
+    _parentBuildScope = BuildScope();
+  }
+}
+
+// BuildContext objects are actually Element objects.
+// The BuildContext interface is used to discourage direct manipulation of Element objects.
+abstract class BuildContext {
+  bool get mounted;
+  BuildOwner? get owner;
+  Widget get widget;
+
+  T? dependOnInheritedWidgetOfExactType<T extends InheritedWidget>();
+}
 
 class BuildOwner {
-  BuildOwner();
+  BuildOwner({required this.onBuildScheduled});
+
+  VoidCallback onBuildScheduled;
+
+  void scheduleBuildFor(Element element) {
+    onBuildScheduled();
+    final buildScope = element.buildScope;
+    buildScope._scheduleBuildFor(element);
+  }
+
+  void buildScope(Element element, [VoidCallback? callback]) {
+    final buildScope = element.buildScope;
+    if (callback != null) {
+      callback();
+    }
+    buildScope._flushDirtyElement();
+  }
+}
+
+class BuildScope {
+  final List<Element> _dirtyElements = <Element>[];
+
+  void _scheduleBuildFor(Element element) {
+    _dirtyElements.add(element);
+  }
+
+  void _flushDirtyElement() {
+    for (int i = 0; i < _dirtyElements.length; i++) {
+      final element = _dirtyElements[i];
+      if (identical(element.buildScope, this)) {
+        _tryRebuild(element);
+      }
+    }
+    _dirtyElements.clear();
+  }
+
+  void _tryRebuild(Element element) {
+    element.rebuild();
+  }
 }

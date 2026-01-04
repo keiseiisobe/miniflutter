@@ -45,13 +45,11 @@ class _DefaultBinaryMessanger extends BinaryMessenger {
 
   @override
   Future<ByteData?>? send(String channel, ByteData? message) {
-    // TODO: implement send
     throw UnimplementedError();
   }
 
   @override
   void setMessageHandler(String channel, MessageHandler? handler) {
-    // TODO: implement setMessageHandler
     throw UnimplementedError();
   }
 }
