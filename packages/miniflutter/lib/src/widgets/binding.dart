@@ -8,6 +8,15 @@ import 'package:miniflutter/rendering.dart' as miniflutter_rendering;
 import 'package:miniflutter/widgets.dart' as miniflutter_widgets;
 
 void runApp(Widget app) {
+  /// Binding concept is similar to cloud computing model(Saas, Paas, Iaas).
+  /// WidgetsBinding is a most user friendly interface (like Saas) for your app to communicate with Flutter Engine.
+  /// If you want to customize your own widgets framework, you can do that by using RendererBinding and lower layer bindings (ServicesBinding, SchedulerBinding).
+  ///
+  /// low level --> high level
+  /// Binding:
+  /// SchedulerBinding --> ServicesBinding --> RendererBinding --> WidgetsBinding
+  /// Cloud Computing Model:
+  /// Iaas --> Paas --> Saas
   final WidgetsBinding binding = WidgetsFlutterBinding.ensureInitialized();
   _runWidget(binding.wrapWithDefaultView(app), binding);
 }
