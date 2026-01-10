@@ -5,7 +5,7 @@ void main() {
   miniflutter.runApp(const MyApp());
 }
 
-class MyApp extends miniflutter.StatelessWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   // This widget is the root of your application.
