@@ -74,6 +74,7 @@ mixin WidgetsBinding
 
   void attachToBuildOwner(RootWidget widget) {
     final isBootstrapFrame = rootElement == null;
+    // I don't know why do 'widget.attach(buildOwner)', not 'buildOwner.attach(widget)'
     _rootElement = widget.attach(buildOwner!, rootElement);
     if (isBootstrapFrame) {
       /// This line can only be `ensureVisualUpdate();`
@@ -104,8 +105,17 @@ class RootWidget extends miniflutter_widgets.Widget {
     RootElement? element,
   ) {
     if (element == null) {
-      element = createElement();
-      element.assignOwner(owner);
+      // This `lockState` is for preventing re-entrant calls.
+      // For example,
+      // @override
+      // Widget build(BuildContext context) {
+      //  setState(() {}); <-- Calling setState() during build is forbidden.
+      //  return Container();
+      // }
+      owner.lockState(() {
+        element = createElement();
+        element!.assignOwner(owner);
+      });
       owner.buildScope(element);
     } else {}
     return element;

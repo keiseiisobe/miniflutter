@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
 
+/// -------------------- Widget --------------------
+
+@immutable
+abstract class Widget {
+  const Widget({this.key});
+
+  final Key? key;
+
+  @protected
+  Element createElement();
+}
+
 abstract class StatelessWidget extends Widget {
   const StatelessWidget({super.key});
 
@@ -16,22 +28,6 @@ abstract class StatelessWidget extends Widget {
   Widget build(BuildContext context);
 }
 
-/// The element tree is necessary because the widgets themselves are immutable,
-/// which means (among other things), they cannot remember their parent or
-/// child relationships with other widgets.
-/// https://docs.flutter.dev/resources/inside-flutter#:~:text=The%20element%20tree%20is%20necessary%20because%20the%20widgets%20themselves%20are%20immutable%2C%20which%20means%20(among%20other%20things)%2C%20they%20cannot%20remember%20their%20parent%20or%20child%20relationships%20with%20other%20widgets.
-class StatelessElement extends ComponentElement {
-  StatelessElement(StatelessWidget super.widget);
-
-  /// As you can see [this] argument in build method, BuildContext is Element.
-  /// BuildContext helps user to avoid manipulating Element object directly.
-  /// https://api.flutter.dev/flutter/widgets/BuildContext-class.html#:~:text=BuildContext%20objects%20are%20actually%20Element%20objects.%20The%20BuildContext%20interface%20is%20used%20to%20discourage%20direct%20manipulation%20of%20Element%20objects.
-  @override
-  Widget build() {
-    return (widget as StatelessWidget).build(this);
-  }
-}
-
 abstract class StatefulWidget extends Widget {
   const StatefulWidget({super.key});
 
@@ -45,14 +41,7 @@ abstract class StatefulWidget extends Widget {
   State createState();
 }
 
-abstract class Widget {
-  const Widget({this.key});
-
-  final Key? key;
-
-  @protected
-  Element createElement();
-}
+/// -------------------- State --------------------
 
 abstract class State<T extends StatefulWidget> {
   /// These properties ([_widget] and [_element]) are initialized by the framework before calling [initState].
@@ -79,7 +68,7 @@ abstract class State<T extends StatefulWidget> {
   @protected
   void dispose();
 
-  /// Thie method is expected to be called at most once per frame,
+  /// This method is expected to be called at most once per frame,
   @protected
   void setState(VoidCallback fn) {
     fn();
@@ -91,40 +80,7 @@ abstract class State<T extends StatefulWidget> {
   Widget build(BuildContext context);
 }
 
-class StatefulElement extends ComponentElement {
-  StatefulElement(StatefulWidget super.widget) : state = widget.createState();
-
-  final State state;
-
-  @override
-  Widget build() {
-    return state.build(this);
-  }
-}
-
-abstract class ComponentElement extends Element {
-  ComponentElement(super.widget);
-
-  Widget? _child;
-
-  Widget? get renderObjectAttachingChild => _child;
-
-  @protected
-  Widget build();
-
-  @override
-  void performRebuild() {
-    Widget built;
-    try {
-      built = build();
-    } finally {
-      // Only after `build()` method finished, we mark the element as clean
-      // to ignore `markNeedsBuild()` during `build()`
-      super.performRebuild();
-    }
-    _child = updateChild(_child, built, slot);
-  }
-}
+/// -------------------- Element --------------------
 
 /// Docs in this page is valuable to understand how Element works.
 /// https://api.flutter.dev/flutter/widgets/Element-class.html
@@ -185,12 +141,65 @@ abstract class Element implements BuildContext {
   }
 }
 
+abstract class ComponentElement extends Element {
+  ComponentElement(super.widget);
+
+  Widget? _child;
+
+  Widget? get renderObjectAttachingChild => _child;
+
+  @protected
+  Widget build();
+
+  @override
+  void performRebuild() {
+    Widget built;
+    try {
+      built = build();
+    } finally {
+      // Only after `build()` method finished, we mark the element as clean
+      // to ignore `markNeedsBuild()` during `build()`
+      super.performRebuild();
+    }
+    _child = updateChild(_child, built, slot);
+  }
+}
+
 mixin RootElementMixin on Element {
   void assignOwner(BuildOwner owner) {
     _owner = owner;
     _parentBuildScope = BuildScope();
   }
 }
+
+/// The element tree is necessary because the widgets themselves are immutable,
+/// which means (among other things), they cannot remember their parent or
+/// child relationships with other widgets.
+/// https://docs.flutter.dev/resources/inside-flutter#:~:text=The%20element%20tree%20is%20necessary%20because%20the%20widgets%20themselves%20are%20immutable%2C%20which%20means%20(among%20other%20things)%2C%20they%20cannot%20remember%20their%20parent%20or%20child%20relationships%20with%20other%20widgets.
+class StatelessElement extends ComponentElement {
+  StatelessElement(StatelessWidget super.widget);
+
+  /// As you can see [this] argument in build method, BuildContext is Element.
+  /// BuildContext helps user to avoid manipulating Element object directly.
+  /// https://api.flutter.dev/flutter/widgets/BuildContext-class.html#:~:text=BuildContext%20objects%20are%20actually%20Element%20objects.%20The%20BuildContext%20interface%20is%20used%20to%20discourage%20direct%20manipulation%20of%20Element%20objects.
+  @override
+  Widget build() {
+    return (widget as StatelessWidget).build(this);
+  }
+}
+
+class StatefulElement extends ComponentElement {
+  StatefulElement(StatefulWidget super.widget) : state = widget.createState();
+
+  final State state;
+
+  @override
+  Widget build() {
+    return state.build(this);
+  }
+}
+
+/// -------------------- Other --------------------
 
 // BuildContext objects are actually Element objects.
 // The BuildContext interface is used to discourage direct manipulation of Element objects.

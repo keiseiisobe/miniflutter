@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:miniflutter/rendering.dart';
+import 'package:miniflutter/scheduler.dart';
+import 'package:miniflutter/services.dart';
 import 'package:miniflutter/widgets.dart' as miniflutter;
 
 void main() {
-  miniflutter.runApp(const MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
