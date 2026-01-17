@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 
-/// -------------------- Widget --------------------
+// -------------------- Widget --------------------
 
+/// As `@immutable` decorator indicates, all of the instance fields of `Widget` class,
+/// whether defined directly or inherited, are `final`.
+/// See meta.dart for more details.
 @immutable
-abstract class Widget {
+abstract class Widget extends Object {
   const Widget({this.key});
 
   final Key? key;
 
+  // Be careful.
+  // `@protected` decorator indicates this method is visible not only to other instance members
+  // of the class or mixin, and their subtypes (like c++), but also `within the declaring library`,
   @protected
+  /// This method must return a newly created element or null.
+  @factory
   Element createElement();
+
+  /// This static method is used by `Element.updateChild()`
+  /// to determine if the oldWidget can be updated with newWidget configuration.
+  /// If not, old child has to be disposed, and create new child.
+  static bool canUpdate(Widget newWidget, Widget oldWidget) {
+    return newWidget.runtimeType == oldWidget.runtimeType &&
+        newWidget.key == oldWidget.key;
+  }
 }
 
 abstract class StatelessWidget extends Widget {
@@ -22,12 +38,20 @@ abstract class StatelessWidget extends Widget {
 
   /// This build method is called in three situations.
   /// 1. The first time this widget is inserted in the tree.
-  /// 2. When its parent widget changes its configration
+  /// 2. When its parent widget changes its configuration
   /// 3. When InheritedWidget it depends on changes
   @protected
-  Widget build(BuildContext context);
+  Widget build(
+    // Thanks to this parameter, developer can configure widget depending on
+    // where instance of this widget is inserted (ex. by using `dependOnInheritedWidgetOfExactType`)
+    // and when this widget has multiple instances.
+    BuildContext context,
+  );
 }
 
+/// For compositions that depend only on the configuration information in the object itself
+/// and the BuildContext in which the widget is inflated, consider using StatelessWidget.
+/// If depend on anything else, consider using StatefulWidget.
 abstract class StatefulWidget extends Widget {
   const StatefulWidget({super.key});
 
@@ -41,8 +65,14 @@ abstract class StatefulWidget extends Widget {
   State createState();
 }
 
-/// -------------------- State --------------------
+// -------------------- State --------------------
 
+/// BuildContext and State instances share their life cycle.
+/// State object never change its BuildContext.
+/// ex.
+/// When StatefulWidget is removed from tree and inserted into the tree again,
+/// framework call StatefulWidget.createState() again to create a fresh State Object.
+/// https://api.flutter.dev/flutter/widgets/State-class.html#:~:text=if%20a%20StatefulWidget%20is%20removed%20from%20the%20tree%20and%20later%20inserted%20in%20to%20the%20tree%20again%2C%20the%20framework%20will%20call%20StatefulWidget.createState%20again%20to%20create%20a%20fresh%20State%20object%2C%20simplifying%20the%20lifecycle%20of%20State%20objects.
 abstract class State<T extends StatefulWidget> {
   /// These properties ([_widget] and [_element]) are initialized by the framework before calling [initState].
   T? _widget;
@@ -60,19 +90,40 @@ abstract class State<T extends StatefulWidget> {
   bool get mounted => _element != null;
 
   @protected
-  void initState();
+  @mustCallSuper
+  void initState() {}
+
+  /// Called whenever the widget configuration changes.
+  ///
+  /// Subclass of State can override this method.
+  ///
+  /// ex.
+  /// ```
+  /// @override
+  /// void didUpdateWidget(covariant SomeStatefulWidget oldWidget) {
+  ///   super.didUpdateWidget(oldWidget);
+  ///   if (widget.stream != oldWidget.stream) {
+  ///     _subscription.cancel();
+  ///     _subscription = null;
+  ///     _subscription = widget.stream.listen(/* some callback here */);
+  ///   }
+  /// }
+  /// ```
+  @protected
+  @mustCallSuper
+  void didUpdateWidget(covariant T oldWidget) {}
 
   @protected
-  void didUpdateWidget(covariant T oldWidget);
-
-  @protected
-  void dispose();
+  @mustCallSuper
+  void dispose() {}
 
   /// This method is expected to be called at most once per frame,
   @protected
   void setState(VoidCallback fn) {
-    fn();
-    // TODO(someone): fn must not be async
+    final result = fn() as dynamic;
+    if (result is Future) {
+      throw (FlutterError("SetState() callback argument returned Future."));
+    }
     _element!.markNeedsBuild();
   }
 
@@ -80,14 +131,15 @@ abstract class State<T extends StatefulWidget> {
   Widget build(BuildContext context);
 }
 
-/// -------------------- Element --------------------
+// -------------------- Element --------------------
 
 /// Docs in this page is valuable to understand how Element works.
 /// https://api.flutter.dev/flutter/widgets/Element-class.html
-abstract class Element implements BuildContext {
+abstract class Element extends Object implements BuildContext {
   Element(Widget widget) : _widget = widget;
 
   // `_widget` can be null if unmounted from tree by `unmount()`
+  // ignore: prefer_final_fields
   Widget? _widget;
 
   BuildOwner? _owner;
@@ -95,6 +147,10 @@ abstract class Element implements BuildContext {
   bool _dirty = true;
 
   BuildScope? _parentBuildScope;
+
+  Element? _parent;
+
+  Object? _slot;
 
   @override
   Widget get widget => _widget!;
@@ -118,6 +174,8 @@ abstract class Element implements BuildContext {
   }
 
   void mount(Element? parent, Object? newSlot) {
+    _parent = parent;
+    _slot = newSlot;
     if (parent != null) {
       // When parent == null (When this element is RootElement),
       // `_owner` and `_parentBuildScope` must be initialized by `RootElementMixin.assingOwner()`
@@ -138,6 +196,53 @@ abstract class Element implements BuildContext {
   void performRebuild() {
     // Subclass must call `super.performRebuild()`.
     _dirty = false;
+  }
+
+  /// See https://api.flutter.dev/flutter/widgets/Element/updateChild.html
+  @protected
+  Element? updateChild(Element? child, Widget? newWidget, Object? newSlot) {
+    if (newWidget == null) {
+      if (child != null) {
+        deactivateChild();
+      }
+      return null;
+    }
+
+    final Element newChild;
+
+    if (child != null) {
+      if (child.widget == newWidget) {
+        newChild = child;
+      } else if (Widget.canUpdate(newWidget, child.widget)) {
+        child.update(newWidget);
+        newChild = child;
+      } else {
+        deactivateChild();
+        newChild = inflateWidget(newWidget, newSlot);
+      }
+    } else {
+      newChild = inflateWidget(newWidget, newSlot);
+    }
+    return newChild;
+  }
+
+  @protected
+  @mustCallSuper
+  void deactivateChild() {
+    // TODO(someone): implement
+  }
+
+  @mustCallSuper
+  void update(covariant Widget newWidget) {
+    _widget = newWidget;
+  }
+
+  @protected
+  Element inflateWidget(Widget newWidget, Object? newSlot) {
+    final newChild = newWidget.createElement();
+    // This calls ComponentElement.mount()
+    newChild.mount(this, newSlot);
+    return newChild;
   }
 }
 
@@ -165,6 +270,9 @@ abstract class ComponentElement extends Element {
   }
 }
 
+/// Only root elements may have their owner set explicitly. All other
+/// elements inherit their owner from their parent.
+/// That why RootElementMixin is in widgets/framework.dart because _owner is private.
 mixin RootElementMixin on Element {
   void assignOwner(BuildOwner owner) {
     _owner = owner;
@@ -199,7 +307,7 @@ class StatefulElement extends ComponentElement {
   }
 }
 
-/// -------------------- Other --------------------
+// -------------------- Other --------------------
 
 // BuildContext objects are actually Element objects.
 // The BuildContext interface is used to discourage direct manipulation of Element objects.
@@ -228,6 +336,11 @@ class BuildOwner {
       callback();
     }
     buildScope._flushDirtyElement();
+  }
+
+  void lockState(VoidCallback callback) {
+    // TODO(someone): implement lockState
+    callback();
   }
 }
 

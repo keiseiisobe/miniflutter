@@ -93,7 +93,7 @@ mixin WidgetsBinding
 class RootWidget extends miniflutter_widgets.Widget {
   const RootWidget({super.key, this.child});
 
-  final Widget? child;
+  final miniflutter_widgets.Widget? child;
 
   @override
   RootElement createElement() {
@@ -102,9 +102,9 @@ class RootWidget extends miniflutter_widgets.Widget {
 
   RootElement attach(
     miniflutter_widgets.BuildOwner owner,
-    RootElement? element,
+    RootElement? rootElement,
   ) {
-    if (element == null) {
+    if (rootElement == null) {
       // This `lockState` is for preventing re-entrant calls.
       // For example,
       // @override
@@ -113,18 +113,35 @@ class RootWidget extends miniflutter_widgets.Widget {
       //  return Container();
       // }
       owner.lockState(() {
-        element = createElement();
-        element!.assignOwner(owner);
+        rootElement = createElement();
+        rootElement!.assignOwner(owner);
       });
-      owner.buildScope(element);
-    } else {}
-    return element;
+      owner.buildScope(rootElement!, () {
+        rootElement!.mount(null, null);
+      });
+    } else {
+      // TODO(someone): implement
+    }
+    return rootElement!;
   }
 }
 
 class RootElement extends miniflutter_widgets.Element
     with miniflutter_widgets.RootElementMixin {
   RootElement(super.widget);
+
+  miniflutter_widgets.Element? _child;
+
+  @override
+  void mount(miniflutter_widgets.Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    _rebuild();
+    super.performRebuild();
+  }
+
+  void _rebuild() {
+    _child = updateChild(_child, (widget as RootWidget).child, null);
+  }
 }
 
 /// Multiple Mixin:
