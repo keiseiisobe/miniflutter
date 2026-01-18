@@ -65,6 +65,47 @@ abstract class StatefulWidget extends Widget {
   State createState();
 }
 
+abstract class RenderObjectWidget extends Widget {
+  const RenderObjectWidget({super.key});
+
+  @override
+  @factory
+  Element createElement();
+
+  @protected
+  @factory
+  RenderObject createRenderObject(BuildContext context);
+}
+
+abstract class LeafRenderObjectWidget extends RenderObjectWidget {
+  const LeafRenderObjectWidget({super.key});
+
+  @override
+  LeafRenderObjectElement createElement() => LeafRenderObjectElement(this);
+}
+
+abstract class SingleChildRenderObjectWidget extends RenderObjectWidget {
+  const SingleChildRenderObjectWidget({super.key, this.child});
+
+  final Widget? child;
+
+  @override
+  SingleChildRenderObjectElement createElement() =>
+      SingleChildRenderObjectElement(this);
+}
+
+abstract class MultiChildRenderObjectWidget extends RenderObjectWidget {
+  const MultiChildRenderObjectWidget({
+    super.key,
+    this.children = const <Widget>[],
+  });
+
+  final List<Widget> children;
+
+  @override
+  Element createElement() => MultiChildRenderObjectElement(this);
+}
+
 // -------------------- State --------------------
 
 /// BuildContext and State instances share their life cycle.
@@ -167,6 +208,8 @@ abstract class Element extends Object implements BuildContext {
   @override
   BuildScope get buildScope => _parentBuildScope!;
 
+  Object? get slot => _slot;
+
   // For now, we don't implement this method to avoid complexity.
   @override
   T? dependOnInheritedWidgetOfExactType<T extends InheritedWidget>() {
@@ -190,9 +233,11 @@ abstract class Element extends Object implements BuildContext {
   }
 
   void rebuild() {
+    // This calls ComponentElement.performRebuild() or RenderObjectElement.performRebuild() first.
     performRebuild();
   }
 
+  @mustCallSuper
   void performRebuild() {
     // Subclass must call `super.performRebuild()`.
     _dirty = false;
@@ -240,18 +285,29 @@ abstract class Element extends Object implements BuildContext {
   @protected
   Element inflateWidget(Widget newWidget, Object? newSlot) {
     final newChild = newWidget.createElement();
-    // This calls ComponentElement.mount()
+    // This calls ComponentElement.mount() or RenderObjectElement.mount() first.
     newChild.mount(this, newSlot);
     return newChild;
   }
+
+  void attachRenderObject(Object? newSlot) {}
 }
 
+/// Contrast with `RenderObjectElement`.
+/// When you are wondering why `Element` and `RenderObject` should be separated,
+/// see https://docs.flutter.dev/resources/inside-flutter#separation-of-the-element-and-renderobject-trees
+///
+/// `ComponentElement` does not draw anything.
+/// Its job is to define `the combination of classes` as `composition` (how we build UIs).
+/// see https://docs.flutter.dev/resources/inside-flutter#conclusion
+///
+/// Flutter's slogan: "Everything is a widget"
 abstract class ComponentElement extends Element {
   ComponentElement(super.widget);
 
-  Widget? _child;
+  Element? _child;
 
-  Widget? get renderObjectAttachingChild => _child;
+  Element? get renderObjectAttachingChild => _child;
 
   @protected
   Widget build();
@@ -260,6 +316,11 @@ abstract class ComponentElement extends Element {
   void performRebuild() {
     Widget built;
     try {
+      // `build()` method returns its child widget.
+      // When you configure widgets tree like
+      // Center --> Column --> Text,
+      // Center.build() returns Column, Column.build() returns Text, Text.build() returns RichText.
+      // So you can go deeper into the tree.
       built = build();
     } finally {
       // Only after `build()` method finished, we mark the element as clean
@@ -267,6 +328,100 @@ abstract class ComponentElement extends Element {
       super.performRebuild();
     }
     _child = updateChild(_child, built, slot);
+  }
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    _firstBuild();
+  }
+
+  void _firstBuild() {
+    rebuild();
+  }
+}
+
+abstract class RenderObjectElement extends Element {
+  RenderObjectElement(RenderObjectWidget super.widget);
+
+  RenderObject? _renderObject;
+
+  RenderObjectElement? _ancestorRenderObjectElement;
+
+  RenderObject get renderObject => _renderObject!;
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    _renderObject = (widget as RenderObjectWidget).createRenderObject(this);
+    attachRenderObject(newSlot);
+    super.performRebuild();
+  }
+
+  @override
+  void attachRenderObject(Object? newSlot) {
+    _slot = newSlot;
+    _ancestorRenderObjectElement = _findAncestorRenderObjectElement();
+    if (_ancestorRenderObjectElement == null) {
+      throw FlutterError(
+        "Cannot find ancestor render object to attach to. Try wrapping your widget in View widget.",
+      );
+    }
+    _ancestorRenderObjectElement!.insertRenderObjectChild(
+      renderObject,
+      newSlot,
+    );
+  }
+
+  RenderObjectElement? _findAncestorRenderObjectElement() {
+    Element? ancestor = _parent;
+    while (ancestor != null && ancestor is! RenderObjectElement) {
+      ancestor = ancestor._parent;
+    }
+    return ancestor as RenderObjectElement?;
+  }
+
+  void insertRenderObjectChild(RenderObject renderObject, Object? newSlot);
+}
+
+class LeafRenderObjectElement extends RenderObjectElement {
+  LeafRenderObjectElement(LeafRenderObjectWidget super.widget);
+
+  @override
+  void insertRenderObjectChild(RenderObject renderObject, Object? newSlot) {}
+
+  // There is no `mount()` method override because this is `Leaf` (has no child).
+}
+
+class SingleChildRenderObjectElement extends RenderObjectElement {
+  SingleChildRenderObjectElement(SingleChildRenderObjectWidget super.widget);
+
+  Element? _child;
+
+  @override
+  void insertRenderObjectChild(RenderObject renderObject, Object? newSlot) {}
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    _child = updateChild(
+      _child,
+      (widget as SingleChildRenderObjectWidget).child,
+      // Why `null`?
+      null,
+    );
+  }
+}
+
+class MultiChildRenderObjectElement extends RenderObjectElement {
+  MultiChildRenderObjectElement(MultiChildRenderObjectWidget super.widget);
+
+  @override
+  void insertRenderObjectChild(RenderObject renderObject, Object? newSlot) {}
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
   }
 }
 
